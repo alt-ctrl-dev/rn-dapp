@@ -1,0 +1,21 @@
+{
+  "name": "blockchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handout.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "compile:contract": "truffle compile",
+    "migrate:contract": "truffle migrate  --network ganache",
+    "build:contract": "truffle migrate --compile-all --reset --network ganache",
+    "test": "truffle test --network ganache"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "truffle-hdwallet-provider": "0.0.3",
+    "zeppelin-solidity": "^1.8.0"
+  }
+}

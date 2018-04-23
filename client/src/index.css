@@ -1,0 +1,23 @@
+.margin-botton{
+    margin-bottom: .5em;
+   }
+   
+   .margin-right{
+    margin-right: .5em;
+   }
+   .margin-botton-right{
+    margin-right: .5em;
+    margin-bottom: .5em;
+   }
+   
+.mini-jumbotron{
+    padding:.5rem .5rem;
+}
+
+.room-width{
+    width: 20rem;
+}
+
+.owner{
+    color: red;
+}
