@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ReactModal from 'react-modal';
-import {Button} from 'react-bootstrap';
+import {Button,Panel} from 'react-bootstrap';
 
 ReactModal.setAppElement('#root')
 class CustomModal extends Component {
@@ -24,16 +24,20 @@ class CustomModal extends Component {
   
   render () {
     return (
-      <div>
+      <span>
       <Button onClick={this.handleOpenModal} bsSize="large" bsStyle="info">Offer Room</Button>
         <ReactModal 
            isOpen={this.state.showModal}
            contentLabel="Minimal Modal Example"
-           style={customStyles}
-        >
-          <button onClick={this.handleCloseModal}>Close Modal</button>
+           style={customStyles} >
+        <Panel>
+          <Panel.Heading className="d-flex justify-content-end">
+      <Button onClick={this.handleCloseModal}> X </Button></Panel.Heading>
+          <Panel.Body>Some default panel content here.</Panel.Body>
+          <Panel.Body>Some more panel content here.</Panel.Body>
+        </Panel>
         </ReactModal>
-      </div>
+      </span>
     );
   }
 }
@@ -43,9 +47,14 @@ const customStyles = {
     backgroundColor: '#50505077',
   },
   content:{
-    width:'25%',
-    margin:'0 auto',
-    height:'50%'
+    backgroundColor: '#50505000',
+    top: '25%',
+    left: '25%',
+    bottom: '25%',
+    right: '25%',
+    // width:'100%',
+    // margin:'0 auto',
+    // border: '0'
   }
 };
   
