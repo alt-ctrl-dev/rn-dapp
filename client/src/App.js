@@ -17,18 +17,20 @@ class App extends Component {
       isReady:false,
       isLoading:true,
       isLocal:false,
+      isLocked:false,
       BCCRoomBooking:null,
       owner:0x0,
       coinbase:0x0,
       rooms:[],
       tokens:0
     };
-    this.initWeb3 = this.initWeb3.bind(this);
-    this.initContract = this.initContract.bind(this);
-    this.getOwner = this.getOwner.bind(this);
+    // this.initWeb3 = this.initWeb3.bind(this);
+    // this.initContract = this.initContract.bind(this);
+    // this.getOwner = this.getOwner.bind(this);
     this.getCurrentAccount = this.getCurrentAccount.bind(this);
-    this.getTokenBalance = this.getTokenBalance.bind(this);
+    // this.getTokenBalance = this.getTokenBalance.bind(this);
     this.buyTokens = this.buyTokens.bind(this);
+    this.offerRoom = this.offerRoom.bind(this);
   }
 
   componentDidMount() {
@@ -42,7 +44,8 @@ class App extends Component {
       console.log("Web3 Injected")
       web3 = new Web3(window.web3.currentProvider);
       this.setState({
-        isLocal:true
+        isLocal:true,
+        isLocked:web3.eth.accounts.length===0
       })
     }
     else {
@@ -64,7 +67,7 @@ class App extends Component {
     var bccRoomBookingArtifact = await output.json();
     let contract = TruffleContract(bccRoomBookingArtifact);
     contract.setProvider(this.state.web3.currentProvider);
-
+    
     let instance = await contract.deployed();
     this.setState({BCCRoomBooking:instance}, function () {
       this.setState({
@@ -83,6 +86,7 @@ class App extends Component {
     try{
       let owner = await this.state.BCCRoomBooking.owner()
       this.setState({owner});
+      this.setState({isLoading:false});
       this.getCurrentAccount();
       this.listenEvents();
     }
@@ -117,16 +121,32 @@ class App extends Component {
   async getCurrentAccount() {
     //Add logic to select ganache account
     try {
-      var coinbase =  this.state.isLocal?this.state.web3.eth.accounts[0]:this.state.web3.eth.accounts[1];
-      if (coinbase !== App.account) {
+      var coinbase;
+      if(!this.state.isLocal){
+        let output = await fetch("http://localhost:5000/api/account")
+        var data = await output.json();
+        console.log(data.random);
+        coinbase = data.account;
+      }
+      else{
+        this.setState({
+          isLocked:this.state.web3.eth.accounts.length===0
+        })
+        coinbase = (this.state.web3.eth.accounts.length)?this.state.web3.eth.accounts[0]:0x0;
+      }
+
+      if (coinbase !== this.state.coinbase) {
         this.setState({coinbase},()=>{
+          if(!this.state.isLocked)
           this.getTokenBalance();
         });
       }
-      if(this.state.isLocal){
-        window.requestAnimationFrame(this.getCurrentAccount);
-      }
-      this.setState({isLoading:false});
+      if(this.state.isLocal)
+        window.requestAnimationFrame(()=>{
+          this.getCurrentAccount();
+          this.getTokenBalance();
+        });
+
     } catch (err) {
       alert("Could not get Current Account")
       console.log(err.message);
@@ -137,7 +157,12 @@ class App extends Component {
   async getTokenBalance() {
     try {
       var tokens = await this.state.BCCRoomBooking.getBalance(this.state.coinbase);
-      this.setState({tokens:tokens.toNumber()});
+      this.setState({
+        tokens:tokens.toNumber(),
+        isLoading:false
+      });
+
+    // debugger;
     } catch (err) {
       alert("Could not get Tokens")
       console.log(err.message);
@@ -147,11 +172,32 @@ class App extends Component {
   async buyTokens() {
     try {
       let val = this.state.web3.toWei(1,"ether");
-      var tx = await this.state.BCCRoomBooking.purchaseTokens({value:val,from:this.state.coinbase});
-      this.getTokenBalance();
+      await this.state.BCCRoomBooking.purchaseTokens({value:val,from:this.state.coinbase});
+      this.setState({
+        isLoading:true
+      },()=>{
+        setTimeout(()=>{
+          this.getTokenBalance();
+        },2500)
+      })
     } catch (err) {
       console.error(err);
       alert('buyTokens error occured');
+    }
+  }
+
+  async offerRoom({name,price,description,size}) {
+    try {
+      if ((name.trim() === '') || (price === 0)) {
+        alert("You have to have a name of the room and price for the room!");
+        return;
+      }
+      await this.state.BCCRoomBooking.offerRoom(name, description, size, price, {
+          from: App.account,
+          gas: 500000
+        })
+    } catch (error) {
+      
     }
   }
 
@@ -162,6 +208,10 @@ class App extends Component {
   );
   
     return (
+      (this.state.isLocked)?(
+        <div>Please unlock account</div>
+      ):
+      (
       (this.state.isReady)?(  
         (
           (!this.state.isLoading)?(  
@@ -179,7 +229,7 @@ class App extends Component {
         )
         ) : (
         <div>Not Ready</div>
-      )
+      ))
     );
   }
 }
